@@ -43,3 +43,27 @@ jobs:
           cat prep.txt
           runId=$(cat prep.txt | cut -d= -f2)
           echo "Got RunID from previous job: $runId"
+
+  parallel-jobs:
+    runs-on: ubuntu-latest
+    needs: preparation
+    strategy:
+      matrix:
+        jobName: [JobA, JobB, JobC]
+    steps:
+      - name: Download prep data (unstash equivalent)
+        uses: actions/download-artifact@v4
+        with:
+          name: prepData
+
+      - name: Run job logic
+        run: |
+          echo "${{ matrix.jobName }} running with $(cat prep.txt)" > ${{ matrix.jobName }}.log
+          echo "${{ matrix.jobName }} complete"
+
+      - name: Upload job artifact (stash equivalent)
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.jobName }}Data
+          path: ${{ matrix.jobName }}.log
+
