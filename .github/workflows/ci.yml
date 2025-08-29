@@ -60,7 +60,7 @@ jobs:
       - name: Upload job artifact (stash equivalent)
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.jobName }}.log
+          name: ${{ matrix.jobName }}-artifact
           path: ${{ matrix.jobName }}.log
 
   integration:
@@ -71,6 +71,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           path: .
+          merge-multiple: true
 
       - name: Combine logs
         run: |
