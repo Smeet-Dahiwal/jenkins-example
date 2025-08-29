@@ -63,3 +63,22 @@ jobs:
           name: ${{ matrix.jobName }}Data
           path: ${{ matrix.jobName }}.log
 
+  integration:
+    runs-on: ubuntu-latest
+    needs: parallel-jobs
+    steps:
+      - name: Download all job artifacts (unstash equivalent)
+        uses: actions/download-artifact@v4
+        with:
+          path: .
+
+      - name: Combine logs
+        run: |
+          cat JobA.log JobB.log JobC.log > combined.txt
+          echo "Integration complete"
+
+      - name: Upload integration artifact (stash equivalent)
+        uses: actions/upload-artifact@v4
+        with:
+          name: integrationData
+          path: combined.txt
