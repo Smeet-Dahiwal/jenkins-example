@@ -70,7 +70,13 @@ jobs:
       - name: Download all job artifacts (unstash equivalent)
         uses: actions/download-artifact@v4
         with:
-          path: .
+          path: artifacts
+
+      - name: Move logs to current directory
+        run: |
+          mv artifacts/JobAData/JobA.log .
+          mv artifacts/JobBData/JobB.log .
+          mv artifacts/JobCData/JobC.log .
 
       - name: Combine logs
         run: |
