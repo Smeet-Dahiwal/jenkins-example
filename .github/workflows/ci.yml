@@ -1,30 +1,31 @@
-name: CI-CD Pipeline
+name: CI Pipeline
 
 on:
-  workflow_call:
   push:
-    branches: [ "main" ]
-
-permissions:
-  contents: read
-  id-token: write
+    branches:
+      - main
+  workflow_dispatch:
 
 jobs:
   # ========== Preparation ==========
   preparation:
     runs-on: ubuntu-latest
+    outputs:
+      run_id: ${{ steps.prep.outputs.run_id }}
     steps:
-      - name: Checkout Repo
+      - name: Checkout
         uses: actions/checkout@v4
 
       - name: Prepare Run
         id: prep
         run: |
           RUN_ID=$(uuidgen)
+          echo "Preparation stage: RunID=${RUN_ID}"
+          echo "Build Number: ${{ github.run_number }}"
           echo "RunID=${RUN_ID}" > prep.txt
-          echo "BuildNumber=${GITHUB_RUN_NUMBER}" >> prep.txt
-          echo "RUN_ID=${RUN_ID}" >> $GITHUB_ENV
-          cat prep.txt
+          echo "BuildNumber=${{ github.run_number }}" >> prep.txt
+          echo "run_id=${RUN_ID}" >> $GITHUB_OUTPUT
+
       - name: Upload Prep Data
         uses: actions/upload-artifact@v4
         with:
@@ -36,16 +37,16 @@ jobs:
     runs-on: ubuntu-latest
     needs: preparation
     steps:
+      - uses: actions/checkout@v4
       - name: Download Prep Data
         uses: actions/download-artifact@v4
         with:
           name: prepData
-
       - name: Run JobA
         run: |
-          echo "JobA running with $(cat prep.txt)" > JobA.log
+          echo "JobA running..." > JobA.log
+          cat prep.txt >> JobA.log
           cat JobA.log
-
       - name: Upload JobA Log
         uses: actions/upload-artifact@v4
         with:
@@ -56,16 +57,16 @@ jobs:
     runs-on: ubuntu-latest
     needs: preparation
     steps:
+      - uses: actions/checkout@v4
       - name: Download Prep Data
         uses: actions/download-artifact@v4
         with:
           name: prepData
-
       - name: Run JobB
         run: |
-          echo "JobB running with $(cat prep.txt)" > JobB.log
+          echo "JobB running..." > JobB.log
+          cat prep.txt >> JobB.log
           cat JobB.log
-
       - name: Upload JobB Log
         uses: actions/upload-artifact@v4
         with:
@@ -76,16 +77,16 @@ jobs:
     runs-on: ubuntu-latest
     needs: preparation
     steps:
+      - uses: actions/checkout@v4
       - name: Download Prep Data
         uses: actions/download-artifact@v4
         with:
           name: prepData
-
       - name: Run JobC
         run: |
-          echo "JobC running with $(cat prep.txt)" > JobC.log
+          echo "JobC running..." > JobC.log
+          cat prep.txt >> JobC.log
           cat JobC.log
-
       - name: Upload JobC Log
         uses: actions/upload-artifact@v4
         with:
@@ -97,26 +98,22 @@ jobs:
     runs-on: ubuntu-latest
     needs: [jobA, jobB, jobC]
     steps:
+      - uses: actions/checkout@v4
       - name: Download Job Logs
         uses: actions/download-artifact@v4
         with:
           name: JobAData
-          path: .
       - uses: actions/download-artifact@v4
         with:
           name: JobBData
-          path: .
       - uses: actions/download-artifact@v4
         with:
           name: JobCData
-          path: .
-
       - name: Integrate Logs
         run: |
           cat JobA.log JobB.log JobC.log > combined.txt
           cat combined.txt
-
-      - name: Upload Integration Data
+      - name: Upload Combined Log
         uses: actions/upload-artifact@v4
         with:
           name: integrationData
@@ -127,12 +124,12 @@ jobs:
     runs-on: ubuntu-latest
     needs: integration
     steps:
-      - name: Download Integration Data
+      - uses: actions/checkout@v4
+      - name: Download Combined Log
         uses: actions/download-artifact@v4
         with:
           name: integrationData
-
-      - name: Deploy
+      - name: Deploy Step
         run: |
           echo "Deploy step using combined results:"
           cat combined.txt
